@@ -169,9 +169,9 @@ type ColorTheme struct {
 	Border       Color
 }
 
-func (t *ColorTheme) HasBg() bool {
-	return t.Bg != colDefault
-}
+// func (t *ColorTheme) HasBg() bool {
+// 	return t.Bg != colDefault
+// }
 
 type BorderStyle int
 
@@ -191,9 +191,9 @@ type MouseEvent struct {
 }
 
 var (
-	Default16 *ColorTheme
-	Dark256   *ColorTheme
-	Light256  *ColorTheme
+	// Default16 *ColorTheme
+	// Dark256   *ColorTheme
+	// Light256  *ColorTheme
 
 	ColDefault      ColorPair
 	ColNormal       ColorPair
@@ -209,3 +209,5 @@ var (
 	ColBorder       ColorPair
 	ColUser         ColorPair
 )
+
+// ColorPair = NewColorPair(	colBlue)

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/edi9999/ii/core"
 	"github.com/edi9999/ii/interactive"
 	"github.com/gdamore/tcell"
 )
@@ -12,8 +11,8 @@ type VisualState struct {
 	xbound, ybound int
 }
 
-func NewVisualState(state core.State) VisualState {
-	lines := interactive.PrintTree(state.Buffers[0].Lines)
+func NewVisualState(linesArray []string) VisualState {
+	lines := interactive.PrintTree(linesArray)
 	xbound := 0
 	ybound := len(lines)
 	for index, line := range lines {
@@ -27,9 +26,6 @@ func NewVisualState(state core.State) VisualState {
 
 func (vs VisualState) GetCell(x, y int) (rune, tcell.Style, []rune, int) {
 	style := tcell.StyleDefault
-	if y == vs.selected {
-		style = style.Reverse(true)
-	}
 	if y < len(vs.folders) {
 		line := vs.folders[y]
 		if x < len(vs.folders[y].Text) {

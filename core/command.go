@@ -183,12 +183,17 @@ func defaultKeymap() map[int][]action {
 }
 
 type Buf struct {
-	Lines []string
+	Lines  []string
+	Status int
+	Cmd    string
+	Index  int
 }
 
 type State struct {
 	Buffers   []Buf
+	ExitCodes []int
 	LineInput LineInput
+	Stdin     []string
 }
 
 type LineInput struct {
@@ -212,6 +217,7 @@ func copyState(state State) State {
 	return State{
 		Buffers:   state.Buffers,
 		LineInput: state.LineInput,
+		Stdin:     state.Stdin,
 	}
 }
 
