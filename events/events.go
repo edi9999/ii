@@ -1,4 +1,4 @@
-package tui
+package events
 
 import (
 	"github.com/gdamore/tcell"
@@ -169,10 +169,6 @@ type ColorTheme struct {
 	Border       Color
 }
 
-// func (t *ColorTheme) HasBg() bool {
-// 	return t.Bg != colDefault
-// }
-
 type BorderStyle int
 
 const (
@@ -191,10 +187,6 @@ type MouseEvent struct {
 }
 
 var (
-	// Default16 *ColorTheme
-	// Dark256   *ColorTheme
-	// Light256  *ColorTheme
-
 	ColDefault      ColorPair
 	ColNormal       ColorPair
 	ColPrompt       ColorPair
@@ -209,5 +201,3 @@ var (
 	ColBorder       ColorPair
 	ColUser         ColorPair
 )
-
-// ColorPair = NewColorPair(	colBlue)

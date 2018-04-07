@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"github.com/edi9999/ii/core"
+	"github.com/edi9999/ii/tui"
 	"github.com/gdamore/tcell"
 	"io/ioutil"
 	"log"
@@ -21,14 +22,18 @@ func main() {
 	lastStateChan := make(chan *core.State, 1)
 	var wg sync.WaitGroup
 	wg.Add(3)
-	bytes, err := ioutil.ReadAll(os.Stdin)
-	if err != nil {
-		panic("Failed reading from stdin")
+	bytes := []byte{}
+	stat, err := os.Stdin.Stat()
+	if (stat.Mode() & os.ModeCharDevice) == 0 {
+		bytes, err = ioutil.ReadAll(os.Stdin)
+		if err != nil {
+			panic("Failed reading from stdin")
+		}
 	}
 	input := string(bytes)
 	go core.StartProcessing(commands, states, lastStateChan, input, query, &wg)
-	go InteractiveTree(s, states, &wg)
-	go ParseCommand(s, commands, &wg)
+	go tui.InteractiveTree(s, states, &wg)
+	go core.ParseCommand(s, commands, &wg)
 	wg.Wait()
 	s.Fini()
 }

@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os/exec"
+	"regexp"
 	"strings"
 	"sync"
 	"syscall"
@@ -57,21 +58,37 @@ func runCmd(cmdstring string, stdin string) (int, []string) {
 	return 0, lines
 }
 
-func runMultipleCmds(cmdrune []rune, stdin string) []Buf {
+var emptyRegex = regexp.MustCompile("^ +$")
+var firstNonEmptyChar = regexp.MustCompile("[^ ]")
+
+func runMultipleCmds(cmdList []string, stdin string) []Buf {
 	result := []Buf{}
-	cmdstring := string(cmdrune)
-	cmdList := strings.Split(cmdstring, "|")
 	index := 0
 	for _, cmdstring := range cmdList {
-		status, lines := runCmd(cmdstring, stdin)
-		if len(lines) >= 30 {
-			lines = lines[0:30]
+		cmdbyte := []byte(cmdstring)
+		if len(cmdstring) > 0 && !emptyRegex.Match(cmdbyte) {
+			status, lines := runCmd(cmdstring, stdin)
+			if len(lines) >= 8000 {
+				lines = lines[0:8000]
+			}
+			stdin = strings.Join(lines, "\n")
+			offset := firstNonEmptyChar.FindIndex(cmdbyte)
+			result = append(result, Buf{Lines: lines, Status: status, Cmd: cmdstring, Index: index + offset[0]})
 		}
-		stdin = strings.Join(lines, "\n")
-		result = append(result, Buf{Lines: lines, Status: status, Cmd: cmdstring, Index: index})
 		index = index + len(cmdstring)
 	}
 	return result
+}
+
+func getSelectedWidget(cmdList []string, cursorPosition int) int {
+	totalLength := 0
+	for i, str := range cmdList {
+		totalLength = totalLength + len(str) + 1
+		if cursorPosition < totalLength {
+			return i
+		}
+	}
+	return len(cmdList) - 1
 }
 
 func StartProcessing(
@@ -102,7 +119,9 @@ func StartProcessing(
 		LineInput: li,
 		Stdin:     stdin,
 	}
-	state.Buffers = runMultipleCmds(state.LineInput.Input, input)
+
+	cmdList := strings.Split(string(state.LineInput.Input), "|")
+	state.Buffers = runMultipleCmds(cmdList, input)
 	states <- state
 	for {
 		command, more := <-commands
@@ -111,9 +130,14 @@ func StartProcessing(
 			break
 		}
 		if newState, err := command.Execute(state); err == nil {
+			oldState := state
 			state = newState
-			lines = []string{}
-			state.Buffers = runMultipleCmds(state.LineInput.Input, input)
+			cmdList := strings.Split(string(state.LineInput.Input), "|")
+			state.SelectedWidget = getSelectedWidget(cmdList, state.LineInput.Cx)
+			if string(state.LineInput.Input) != string(oldState.LineInput.Input) {
+				lines = []string{}
+				state.Buffers = runMultipleCmds(cmdList, input)
+			}
 			states <- state
 		}
 	}

@@ -1,8 +1,7 @@
 package core
 
 import (
-	"github.com/edi9999/ii/tui"
-	"log"
+	"github.com/edi9999/ii/events"
 	"regexp"
 	"strings"
 )
@@ -123,8 +122,8 @@ func (t *LineInput) rubout(pattern string) {
 
 func keyMatch(key int, event Event) bool {
 	return event.Type == key ||
-		event.Type == tui.Rune && int(event.Char) == key-tui.AltZ ||
-		event.Type == tui.Mouse && key == tui.DoubleClick && event.MouseEvent.Double
+		event.Type == events.Rune && int(event.Char) == key-events.AltZ ||
+		event.Type == events.Mouse && key == events.DoubleClick && event.MouseEvent.Double
 }
 
 func quoteEntry(entry string) string {
@@ -133,52 +132,52 @@ func quoteEntry(entry string) string {
 
 func defaultKeymap() map[int][]action {
 	keymap := make(map[int][]action)
-	keymap[tui.Invalid] = toActions(actInvalid)
-	keymap[tui.Resize] = toActions(actClearScreen)
-	keymap[tui.CtrlA] = toActions(actBeginningOfLine)
-	keymap[tui.CtrlB] = toActions(actBackwardChar)
-	keymap[tui.CtrlC] = toActions(actAbort)
-	keymap[tui.CtrlG] = toActions(actAbort)
-	keymap[tui.CtrlQ] = toActions(actAbort)
-	keymap[tui.ESC] = toActions(actAbort)
-	keymap[tui.CtrlD] = toActions(actDeleteCharEOF)
-	keymap[tui.CtrlE] = toActions(actEndOfLine)
-	keymap[tui.CtrlF] = toActions(actForwardChar)
-	keymap[tui.CtrlH] = toActions(actBackwardDeleteChar)
-	keymap[tui.BSpace] = toActions(actBackwardDeleteChar)
-	keymap[tui.Tab] = toActions(actToggleDown)
-	keymap[tui.BTab] = toActions(actToggleUp)
-	keymap[tui.CtrlJ] = toActions(actDown)
-	keymap[tui.CtrlK] = toActions(actUp)
-	keymap[tui.CtrlL] = toActions(actClearScreen)
-	keymap[tui.CtrlM] = toActions(actAccept)
-	keymap[tui.CtrlN] = toActions(actDown)
-	keymap[tui.CtrlP] = toActions(actUp)
-	keymap[tui.CtrlU] = toActions(actUnixLineDiscard)
-	keymap[tui.CtrlW] = toActions(actUnixWordRubout)
-	keymap[tui.CtrlY] = toActions(actYank)
+	keymap[events.Invalid] = toActions(actInvalid)
+	keymap[events.Resize] = toActions(actClearScreen)
+	keymap[events.CtrlA] = toActions(actBeginningOfLine)
+	keymap[events.CtrlB] = toActions(actBackwardChar)
+	keymap[events.CtrlC] = toActions(actAbort)
+	keymap[events.CtrlG] = toActions(actAbort)
+	keymap[events.CtrlQ] = toActions(actAbort)
+	keymap[events.ESC] = toActions(actAbort)
+	keymap[events.CtrlD] = toActions(actDeleteCharEOF)
+	keymap[events.CtrlE] = toActions(actEndOfLine)
+	keymap[events.CtrlF] = toActions(actForwardChar)
+	keymap[events.CtrlH] = toActions(actBackwardDeleteChar)
+	keymap[events.BSpace] = toActions(actBackwardDeleteChar)
+	keymap[events.Tab] = toActions(actToggleDown)
+	keymap[events.BTab] = toActions(actToggleUp)
+	keymap[events.CtrlJ] = toActions(actDown)
+	keymap[events.CtrlK] = toActions(actUp)
+	keymap[events.CtrlL] = toActions(actClearScreen)
+	keymap[events.CtrlM] = toActions(actAccept)
+	keymap[events.CtrlN] = toActions(actDown)
+	keymap[events.CtrlP] = toActions(actUp)
+	keymap[events.CtrlU] = toActions(actUnixLineDiscard)
+	keymap[events.CtrlW] = toActions(actUnixWordRubout)
+	keymap[events.CtrlY] = toActions(actYank)
 
-	keymap[tui.AltB] = toActions(actBackwardWord)
-	keymap[tui.SLeft] = toActions(actBackwardWord)
-	keymap[tui.AltF] = toActions(actForwardWord)
-	keymap[tui.SRight] = toActions(actForwardWord)
-	keymap[tui.AltD] = toActions(actKillWord)
-	keymap[tui.AltBS] = toActions(actBackwardKillWord)
+	keymap[events.AltB] = toActions(actBackwardWord)
+	keymap[events.SLeft] = toActions(actBackwardWord)
+	keymap[events.AltF] = toActions(actForwardWord)
+	keymap[events.SRight] = toActions(actForwardWord)
+	keymap[events.AltD] = toActions(actKillWord)
+	keymap[events.AltBS] = toActions(actBackwardKillWord)
 
-	keymap[tui.Up] = toActions(actUp)
-	keymap[tui.Down] = toActions(actDown)
-	keymap[tui.Left] = toActions(actBackwardChar)
-	keymap[tui.Right] = toActions(actForwardChar)
+	keymap[events.Up] = toActions(actUp)
+	keymap[events.Down] = toActions(actDown)
+	keymap[events.Left] = toActions(actBackwardChar)
+	keymap[events.Right] = toActions(actForwardChar)
 
-	keymap[tui.Home] = toActions(actBeginningOfLine)
-	keymap[tui.End] = toActions(actEndOfLine)
-	keymap[tui.Del] = toActions(actDeleteChar)
-	keymap[tui.PgUp] = toActions(actPageUp)
-	keymap[tui.PgDn] = toActions(actPageDown)
+	keymap[events.Home] = toActions(actBeginningOfLine)
+	keymap[events.End] = toActions(actEndOfLine)
+	keymap[events.Del] = toActions(actDeleteChar)
+	keymap[events.PgUp] = toActions(actPageUp)
+	keymap[events.PgDn] = toActions(actPageDown)
 
-	keymap[tui.Rune] = toActions(actRune)
-	keymap[tui.Mouse] = toActions(actMouse)
-	keymap[tui.DoubleClick] = toActions(actAccept)
+	keymap[events.Rune] = toActions(actRune)
+	keymap[events.Mouse] = toActions(actMouse)
+	keymap[events.DoubleClick] = toActions(actAccept)
 	return keymap
 }
 
@@ -190,10 +189,11 @@ type Buf struct {
 }
 
 type State struct {
-	Buffers   []Buf
-	ExitCodes []int
-	LineInput LineInput
-	Stdin     []string
+	Buffers        []Buf
+	ExitCodes      []int
+	LineInput      LineInput
+	Stdin          []string
+	SelectedWidget int
 }
 
 type LineInput struct {
@@ -210,7 +210,7 @@ type Executer interface {
 type Event struct {
 	Type       int
 	Char       rune
-	MouseEvent *tui.MouseEvent
+	MouseEvent *events.MouseEvent
 }
 
 func copyState(state State) State {
@@ -290,7 +290,6 @@ func (e Event) Execute(oldState State) (State, error) {
 		case actBackwardWord:
 			t.Cx = findLastMatch(wordRubout, string(t.Input[:t.Cx])) + 1
 		case actForwardWord:
-			log.Printf("%v\n", actions)
 			t.Cx += findFirstMatch(wordNext, string(t.Input[t.Cx:])) + 1
 		case actKillWord:
 			nCx := t.Cx +

@@ -1,15 +1,6 @@
 package core
 
 const (
-	_        = iota
-	KILOBYTE = 1 << (10 * iota)
-	MEGABYTE
-	GIGABYTE
-	TERABYTE
-	PETABYTE
-)
-
-const (
 	Rune = iota
 
 	CtrlA
@@ -81,9 +72,7 @@ const (
 	AltBS
 
 	Alt0
-)
 
-const ( // Reset iota
 	AltA = Alt0 + 'a' - '0' + iota
 	AltB
 	AltC
