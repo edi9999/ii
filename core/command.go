@@ -147,12 +147,9 @@ func defaultKeymap() map[int][]action {
 	keymap[events.BSpace] = toActions(actBackwardDeleteChar)
 	keymap[events.Tab] = toActions(actToggleDown)
 	keymap[events.BTab] = toActions(actToggleUp)
-	keymap[events.CtrlJ] = toActions(actDown)
-	keymap[events.CtrlK] = toActions(actUp)
+	keymap[events.CtrlK] = toActions(actKillLine)
 	keymap[events.CtrlL] = toActions(actClearScreen)
 	keymap[events.CtrlM] = toActions(actAccept)
-	keymap[events.CtrlN] = toActions(actDown)
-	keymap[events.CtrlP] = toActions(actUp)
 	keymap[events.CtrlU] = toActions(actUnixLineDiscard)
 	keymap[events.CtrlW] = toActions(actUnixWordRubout)
 	keymap[events.CtrlY] = toActions(actYank)
@@ -164,8 +161,6 @@ func defaultKeymap() map[int][]action {
 	keymap[events.AltD] = toActions(actKillWord)
 	keymap[events.AltBS] = toActions(actBackwardKillWord)
 
-	keymap[events.Up] = toActions(actUp)
-	keymap[events.Down] = toActions(actDown)
 	keymap[events.Left] = toActions(actBackwardChar)
 	keymap[events.Right] = toActions(actForwardChar)
 
