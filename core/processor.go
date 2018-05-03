@@ -11,7 +11,15 @@ import (
 	"syscall"
 )
 
+var cmdBlackList = []string{"rm", "mv", "su", "sudo", "vim", "vi", "top", "htop", "nano", "emacs", "xargs"}
+
 func runCmd(cmdstring string, stdin string) (int, []string) {
+	fixedCmd := strings.Trim(cmdstring, " ")
+	for _, disallowedCmd := range cmdBlackList {
+		if fixedCmd == disallowedCmd || strings.HasPrefix(fixedCmd, disallowedCmd+" ") {
+			return 50, []string{"Command '" + disallowedCmd + "' not allowed"}
+		}
+	}
 	if cmdstring == "" {
 		cmdstring = "head -n 30"
 	}
