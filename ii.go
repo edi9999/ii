@@ -22,18 +22,21 @@ func main() {
 	lastStateChan := make(chan *core.State, 1)
 	var wg sync.WaitGroup
 	wg.Add(3)
-	bytes := []byte{}
+	input := ""
 	stat, err := os.Stdin.Stat()
+	if err != nil {
+		panic("Failed reading from stdin")
+	}
 	if (stat.Mode() & os.ModeCharDevice) == 0 {
-		bytes, err = ioutil.ReadAll(os.Stdin)
+		bytes, err := ioutil.ReadAll(os.Stdin)
+		input = string(bytes)
 		if err != nil {
 			panic("Failed reading from stdin")
 		}
 	}
-	input := string(bytes)
-	go core.StartProcessing(commands, states, lastStateChan, input, query, &wg)
-	go tui.InteractiveTree(s, states, &wg)
-	go core.ParseCommand(s, commands, &wg)
+	go core.ProcessCommands(commands, states, lastStateChan, input, query, &wg)
+	go tui.InteractiveCommands(s, states, &wg)
+	go core.InputParser(s, commands, &wg)
 	wg.Wait()
 	s.Fini()
 }
@@ -50,5 +53,6 @@ func initScreen() tcell.Screen {
 		os.Exit(1)
 	}
 	s.Clear()
+	s.EnableMouse()
 	return s
 }

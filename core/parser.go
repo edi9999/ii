@@ -11,7 +11,6 @@ func GetChar(ev interface{}) Event {
 	case *tcell.EventResize:
 		return Event{events.Resize, 0, nil}
 
-	// process mouse events:
 	case *tcell.EventMouse:
 		x, y := ev.Position()
 		button := ev.Buttons()
@@ -21,7 +20,6 @@ func GetChar(ev interface{}) Event {
 		} else if button&tcell.WheelUp != 0 {
 			return Event{events.Mouse, 0, &events.MouseEvent{y, x, +1, false, false, mod}}
 		}
-		// process keyboard:
 	case *tcell.EventKey:
 		alt := (ev.Modifiers() & tcell.ModAlt) > 0
 		keyfn := func(r rune) int {
@@ -167,7 +165,7 @@ func GetChar(ev interface{}) Event {
 	return Event{events.Invalid, 0, nil}
 }
 
-func ParseCommand(s tcell.Screen, commands chan Executer, wg *sync.WaitGroup) {
+func InputParser(s tcell.Screen, commands chan Executer, wg *sync.WaitGroup) {
 	defer wg.Done()
 	for {
 		ev := s.PollEvent()

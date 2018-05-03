@@ -30,6 +30,11 @@ func printLines(lines []string) []Line {
 	return report
 }
 
+func NewVisualStateWithOffset(linesArray []string, style tcell.Style, offset int) VisualState {
+	lines := linesArray[offset:]
+	return NewVisualState(lines, style)
+}
+
 func NewVisualState(linesArray []string, style tcell.Style) VisualState {
 	lines := printLines(linesArray)
 	xbound := 0

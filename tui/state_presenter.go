@@ -13,14 +13,14 @@ import (
 	"sync"
 )
 
-func InteractiveTree(s tcell.Screen, states chan core.State, wg *sync.WaitGroup) {
+func InteractiveCommands(s tcell.Screen, states chan core.State, wg *sync.WaitGroup) {
 	defer wg.Done()
 	for {
 		state, more := <-states
 		if !more {
 			break
 		}
-		printOptions(state, s)
+		printScreen(state, s)
 	}
 }
 
@@ -38,9 +38,9 @@ func createSelectedBorderWidget() *views.CellView {
 	return border
 }
 
-func printOptions(state core.State, s tcell.Screen) {
+func printScreen(state core.State, s tcell.Screen) {
 	s.Clear()
-	intWidth, height := s.Size()
+	intWidth, intHeight := s.Size()
 	width := float64(intWidth)
 
 	layout := views.NewBoxLayout(views.Vertical)
@@ -56,28 +56,19 @@ func printOptions(state core.State, s tcell.Screen) {
 	widgets := []*views.CellView{}
 	countViews := len(state.Buffers)
 	selectedWidget := state.SelectedWidget
-
 	color := ""
-	if len(state.Stdin) > 0 {
-		countViews = countViews + 1
-		selectedWidget = selectedWidget + 1
-		middle := views.NewCellView()
-		middle.SetModel(core.NewVisualState(state.Stdin, tcell.StyleDefault))
-		widgets = append(widgets, middle)
-	}
 	lastIndex := 0
 	for i, buffer := range state.Buffers {
 		color = "%r"
-		switch buffer.Status {
-		case 0:
-			color = "%g"
-		case 1:
-			color = "%r"
+		if buffer.Stdin == false {
+			if buffer.Status == 0 {
+				color = "%g"
+			}
+			mystr = mystr + strings.Repeat(" ", buffer.Index-lastIndex) + color + strconv.Itoa(buffer.Status)
 		}
-		mystr = mystr + strings.Repeat(" ", buffer.Index-lastIndex) + color + strconv.Itoa(buffer.Status)
 		lastIndex = buffer.Index
 		middle := views.NewCellView()
-		middle.SetModel(core.NewVisualState(state.Buffers[i].Lines, tcell.StyleDefault))
+		middle.SetModel(core.NewVisualStateWithOffset(state.Buffers[i].Lines, tcell.StyleDefault, state.Buffers[i].Scroll))
 		widgets = append(widgets, middle)
 	}
 	statusBar.SetMarkup(mystr)
@@ -134,9 +125,9 @@ func printOptions(state core.State, s tcell.Screen) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	ioutil.WriteFile("/tmp/ii.log", []byte(fmt.Sprintf("%s\n", data)), 0644)
+	ioutil.WriteFile("/tmp/bbii.log", []byte(fmt.Sprintf("%s\n", data)), 0644)
 
 	layout.Draw()
-	s.ShowCursor(state.LineInput.Cx, height-1)
+	s.ShowCursor(state.LineInput.Cx, intHeight-1)
 	s.Show()
 }

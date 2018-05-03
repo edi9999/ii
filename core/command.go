@@ -6,6 +6,17 @@ import (
 	"strings"
 )
 
+// Constrain limits the given integer with the upper and lower bounds
+func Constrain(val int, min int, max int) int {
+	if val < min {
+		return min
+	}
+	if val > max {
+		return max
+	}
+	return val
+}
+
 type action struct {
 	t actionType
 	a string
@@ -179,8 +190,10 @@ func defaultKeymap() map[int][]action {
 type Buf struct {
 	Lines  []string
 	Status int
+	Scroll int
 	Cmd    string
 	Index  int
+	Stdin  bool
 }
 
 type State struct {
@@ -208,10 +221,37 @@ type Event struct {
 	MouseEvent *events.MouseEvent
 }
 
+func copyBuffers(buffers []Buf) []Buf {
+	newbuffers := []Buf{}
+	for _, buf := range buffers {
+		newbuffers = append(newbuffers, copyBuffer(buf))
+	}
+	return newbuffers
+}
+
+func copyBuffer(buffer Buf) Buf {
+	return Buf{
+		Lines:  buffer.Lines,
+		Status: buffer.Status,
+		Scroll: buffer.Scroll,
+		Cmd:    buffer.Cmd,
+		Index:  buffer.Index,
+		Stdin:  buffer.Stdin,
+	}
+}
+
+func copyLineInput(li LineInput) LineInput {
+	return LineInput{
+		Input:  copySlice(li.Input),
+		Cx:     li.Cx,
+		Yanked: li.Yanked,
+	}
+}
+
 func copyState(state State) State {
 	return State{
-		Buffers:   state.Buffers,
-		LineInput: state.LineInput,
+		Buffers:   copyBuffers(state.Buffers),
+		LineInput: copyLineInput(state.LineInput),
 		Stdin:     state.Stdin,
 	}
 }
@@ -298,11 +338,19 @@ func (e Event) Execute(oldState State) (State, error) {
 				t.Yanked = copySlice(t.Input[t.Cx:])
 				t.Input = t.Input[:t.Cx]
 			}
+		case actMouse:
+			me := e.MouseEvent
+			// mx, my := me.X, me.Y
+			if me.S != 0 {
+				newState.Buffers[0].Scroll = Constrain(
+					newState.Buffers[0].Scroll-me.S, 0, len(newState.Buffers[0].Lines))
+			}
 		case actRune:
 			prefix := copySlice(t.Input[:t.Cx])
 			t.Input = append(append(prefix, e.Char), t.Input[t.Cx:]...)
 			t.Cx++
 		}
+
 		return true
 	}
 	doActions(actions, mapkey)

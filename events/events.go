@@ -61,6 +61,8 @@ const (
 
 	SLeft
 	SRight
+	SUp
+	SDown
 
 	F1
 	F2

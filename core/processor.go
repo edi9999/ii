@@ -11,7 +11,7 @@ import (
 	"syscall"
 )
 
-var cmdBlackList = []string{"rm", "mv", "su", "sudo", "vim", "vi", "top", "htop", "nano", "emacs", "xargs"}
+var cmdBlackList = []string{"rm", "mv", "su", "sudo", "vim", "vi", "top", "htop", "nano", "emacs", "xargs", "trash", "ii", "fzf", "gedit"}
 
 func runCmd(cmdstring string, stdin string) (int, []string) {
 	fixedCmd := strings.Trim(cmdstring, " ")
@@ -66,26 +66,54 @@ func runCmd(cmdstring string, stdin string) (int, []string) {
 	return 0, lines
 }
 
-var emptyRegex = regexp.MustCompile("^ +$")
 var firstNonEmptyChar = regexp.MustCompile("[^ ]")
 
-func runMultipleCmds(cmdList []string, stdin string) []Buf {
-	result := []Buf{}
-	index := 0
-	for _, cmdstring := range cmdList {
-		cmdbyte := []byte(cmdstring)
-		if len(cmdstring) > 0 && !emptyRegex.Match(cmdbyte) {
-			status, lines := runCmd(cmdstring, stdin)
-			if len(lines) >= 8000 {
-				lines = lines[0:8000]
-			}
-			stdin = strings.Join(lines, "\n")
-			offset := firstNonEmptyChar.FindIndex(cmdbyte)
-			result = append(result, Buf{Lines: lines, Status: status, Cmd: cmdstring, Index: index + offset[0]})
-		}
-		index = index + len(cmdstring)
+func runMultipleCmds(cmdList []string, oldCmdList []string, stdin string, oldBuffers []Buf) []Buf {
+	buffers := []Buf{}
+	if len(stdin) > 0 {
+		buffers = append(buffers, Buf{
+			Lines: strings.Split(stdin, "\n"),
+			Stdin: true,
+		})
 	}
-	return result
+	index := 0
+	same := true
+	for i, cmdstring := range cmdList {
+		cmdbyte := []byte(cmdstring)
+		cmdLen := len(cmdstring)
+		offset := firstNonEmptyChar.FindIndex(cmdbyte)
+		cmdstring = normalizeCmd(cmdstring)
+		if same == true {
+			if len(oldCmdList) <= i {
+				same = false
+			} else {
+				oldCmdString := normalizeCmd(oldCmdList[i])
+				if oldCmdString != cmdstring {
+					same = false
+				}
+			}
+			if len(oldBuffers) <= len(buffers) {
+				same = false
+			}
+		}
+		ioutil.WriteFile("/tmp/ii.log", []byte(fmt.Sprintf("%i, %s\n", i, same)), 0644)
+		if same == true {
+			ioutil.WriteFile("/tmp/ii.log", []byte(fmt.Sprintf("Running %s %s \n", cmdstring, same)), 0644)
+			b := oldBuffers[len(buffers)]
+			b.Index = index + offset[0]
+			buffers = append(buffers, b)
+			stdin = strings.Join(b.Lines, "\n")
+		} else {
+			if len(cmdstring) > 0 {
+				ioutil.WriteFile("/tmp/ii.log", []byte(fmt.Sprintf("Running %s %s \n", cmdstring, same)), 0644)
+				status, lines := runCmd(cmdstring, stdin)
+				stdin = strings.Join(lines, "\n")
+				buffers = append(buffers, Buf{Lines: lines, Status: status, Cmd: cmdstring, Index: index + offset[0], Scroll: 0})
+			}
+		}
+		index = index + cmdLen
+	}
+	return buffers
 }
 
 func getSelectedWidget(cmdList []string, cursorPosition int) int {
@@ -99,37 +127,52 @@ func getSelectedWidget(cmdList []string, cursorPosition int) int {
 	return len(cmdList) - 1
 }
 
-func StartProcessing(
+func getCmdList(cmdString string) []string {
+	return strings.Split(cmdString, "|")
+}
+func normalizeCmd(str string) string {
+	return strings.Trim(str, " ")
+}
+
+func getNewState(stdin string, oldState State, newState State) State {
+	update := string(newState.LineInput.Input) != string(oldState.LineInput.Input)
+	cmdList := getCmdList(string(newState.LineInput.Input))
+	oldCmdList := getCmdList(string(oldState.LineInput.Input))
+	if update {
+		newState.Buffers = runMultipleCmds(cmdList, oldCmdList, stdin, oldState.Buffers)
+	}
+	newState.SelectedWidget = getSelectedWidget(getCmdList(string(newState.LineInput.Input)), newState.LineInput.Cx)
+	if len(newState.Buffers) > 0 && newState.Buffers[0].Stdin {
+		newState.SelectedWidget = 1 + newState.SelectedWidget
+	}
+	return newState
+}
+
+func ProcessCommands(
 	commands <-chan Executer,
 	states chan<- State,
 	lastStateChan chan<- *State,
-	input string,
+	stdin string,
 	query string,
 	wg *sync.WaitGroup,
 ) {
 	defer wg.Done()
-	lines := []string{"waiting for command"}
-	buffer := Buf{
-		Lines: lines,
+	oldState := State{
+		LineInput: LineInput{
+			Input:  []rune{},
+			Cx:     0,
+			Yanked: []rune{},
+		},
 	}
-	li := LineInput{
-		Input:  []rune(query),
-		Cx:     len(query),
-		Yanked: []rune{},
+	newState := State{
+		LineInput: LineInput{
+			Input:  []rune(query),
+			Cx:     len(query),
+			Yanked: []rune{},
+		},
 	}
-	stdin := []string{}
-	if len(input) > 0 {
-		stdin = strings.Split(input, "\n")
-	}
+	state := getNewState(stdin, oldState, newState)
 
-	state := State{
-		Buffers:   []Buf{buffer},
-		LineInput: li,
-		Stdin:     stdin,
-	}
-
-	cmdList := strings.Split(string(state.LineInput.Input), "|")
-	state.Buffers = runMultipleCmds(cmdList, input)
 	states <- state
 	for {
 		command, more := <-commands
@@ -139,13 +182,10 @@ func StartProcessing(
 		}
 		if newState, err := command.Execute(state); err == nil {
 			oldState := state
-			state = newState
-			cmdList := strings.Split(string(state.LineInput.Input), "|")
-			state.SelectedWidget = getSelectedWidget(cmdList, state.LineInput.Cx)
-			if string(state.LineInput.Input) != string(oldState.LineInput.Input) {
-				lines = []string{}
-				state.Buffers = runMultipleCmds(cmdList, input)
-			}
+			state = getNewState(
+				stdin,
+				oldState,
+				newState)
 			states <- state
 		}
 	}
