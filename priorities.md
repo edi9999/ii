@@ -4,3 +4,7 @@
 
 -	Cache output of commands when editing line at the end
 
+-	Scrollable view for each pipe
+
+-	Add tests (have a look at fzf tests for inspiration)
+
