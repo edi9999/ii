@@ -342,8 +342,8 @@ func (e Event) Execute(oldState State) (State, error) {
 			me := e.MouseEvent
 			// mx, my := me.X, me.Y
 			if me.S != 0 {
-				newState.Buffers[0].Scroll = Constrain(
-					newState.Buffers[0].Scroll-me.S, 0, len(newState.Buffers[0].Lines))
+				newState.Buffers[len(newState.Buffers)-1].Scroll = Constrain(
+					newState.Buffers[len(newState.Buffers)-1].Scroll-me.S, 0, len(newState.Buffers[len(newState.Buffers)-1].Lines))
 			}
 		case actRune:
 			prefix := copySlice(t.Input[:t.Cx])
